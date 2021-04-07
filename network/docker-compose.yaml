@@ -1,0 +1,132 @@
+version: '3.5'
+
+networks:
+  iroha-network:
+    name: iroha-network
+    attachable: true
+    ipam:
+      config:
+        - subnet: 172.29.101.0/24
+
+volumes:
+  iroha-postgres-vol1:
+   name: iroha-postgres-vol1
+  iroha-postgres-vol2:
+   name: iroha-postgres-vol2
+  iroha-postgres-vol3:
+   name: iroha-postgres-vol3
+  blockstore1:
+   name: blockstore1
+  blockstore2:
+   name: blockstore2
+  blockstore3:
+   name: blockstore3
+
+services:
+  some-postgres1:
+    image: postgres:13
+    container_name: some-postgres1
+    command: -c max_prepared_transactions=100
+    restart: unless-stopped  
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+    networks:
+      iroha-network:
+        ipv4_address: 172.29.101.21
+    volumes:
+      - type: volume
+        source: iroha-postgres-vol1
+        target: /var/lib/postgresql/data
+
+  iroha1:
+    image: hyperledger/iroha:1.1.1
+    container_name: iroha1
+    restart: unless-stopped  
+    depends_on:
+      - some-postgres1
+    tty: true
+    environment:
+      - KEY=node1
+    entrypoint:
+      - /opt/iroha_data/entrypoint.sh
+    networks:
+      iroha-network:
+        ipv4_address: 172.29.101.121
+    volumes:
+      - ./node1:/opt/iroha_data
+      - type: volume
+        source: blockstore1
+        target: /tmp/block_store1
+
+  some-postgres2:
+    image: postgres:13
+    container_name: some-postgres2
+    command: -c max_prepared_transactions=100
+    restart: unless-stopped  
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+    networks:
+      iroha-network:
+        ipv4_address: 172.29.101.22
+    volumes:
+      - type: volume
+        source: iroha-postgres-vol2
+        target: /var/lib/postgresql/data
+
+  iroha2:
+    image: hyperledger/iroha:1.1.1
+    container_name: iroha2
+    restart: unless-stopped  
+    depends_on:
+      - some-postgres2
+    tty: true
+    environment:
+      - KEY=node2
+    entrypoint:
+      - /opt/iroha_data/entrypoint.sh
+    networks:
+      iroha-network:
+        ipv4_address: 172.29.101.122
+    volumes:
+      - ./node2:/opt/iroha_data
+      - type: volume
+        source: blockstore2
+        target: /tmp/block_store2
+
+  some-postgres3:
+    image: postgres:13
+    container_name: some-postgres3
+    command: -c max_prepared_transactions=100
+    restart: unless-stopped  
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+    networks:
+      iroha-network:
+        ipv4_address: 172.29.101.23
+    volumes:
+      - type: volume
+        source: iroha-postgres-vol3
+        target: /var/lib/postgresql/data
+
+  iroha3:
+    image: hyperledger/iroha:1.1.1
+    container_name: iroha3
+    restart: unless-stopped  
+    depends_on:
+      - some-postgres3
+    tty: true
+    environment:
+      - KEY=node3
+    entrypoint:
+      - /opt/iroha_data/entrypoint.sh
+    networks:
+      iroha-network:
+        ipv4_address: 172.29.101.123
+    volumes:
+      - ./node3:/opt/iroha_data
+      - type: volume
+        source: blockstore3
+        target: /tmp/block_store3
