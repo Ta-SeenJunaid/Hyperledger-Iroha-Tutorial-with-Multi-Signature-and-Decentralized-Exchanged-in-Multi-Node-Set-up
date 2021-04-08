@@ -104,9 +104,11 @@ def init_operation():
     IrohaCrypto.sign_transaction(init_tx, ADMIN_PRIVATE_KEY)
     send_transaction_and_print_status(init_tx)
 
-
 @trace
 def satoshi_creates_exchange_batch():
+    global iroha_satoshi
+    global iroha_nakamoto
+
     satoshi_tx = iroha_satoshi.transaction(
         [iroha_satoshi.command(
             'TransferAsset', src_account_id='satoshi@test', dest_account_id='nakamoto@test', asset_id='scoin#test',
@@ -146,13 +148,86 @@ def nakamoto_accepts_exchange_request():
     time.sleep(5)
 
 
+@trace
+def check_no_pending_txs():
+    global net_1
+    print(' ~~~ No pending txs expected:')
+    print(
+        net_1.send_query(
+            IrohaCrypto.sign_query(
+                iroha_nakamoto.query('GetPendingTransactions',
+                            creator_account='nakamoto@test'),
+                nakamoto_private_key
+            )
+        )
+    )
+    print(' ~~~')
+
+
+@trace
+def get_account_assets_from_peer_1():
+
+    global net_1
+    query = iroha_nakamoto.query('GetAccountAssets', account_id='nakamoto@test')
+    IrohaCrypto.sign_query(query, nakamoto_private_key)
+
+    response = net_1.send_query(query)
+    data = response.account_assets_response.account_assets
+    for asset in data:
+        print('Asset id = {}, balance = {}'.format(
+            asset.asset_id, asset.balance))
+
+
+@trace
+def get_account_assets_from_peer_2():
+
+    global net_2
+    query = iroha_nakamoto.query('GetAccountAssets', account_id='nakamoto@test')
+    IrohaCrypto.sign_query(query, nakamoto_private_key)
+
+    response = net_2.send_query(query)
+    data = response.account_assets_response.account_assets
+    for asset in data:
+        print('Asset id = {}, balance = {}'.format(
+            asset.asset_id, asset.balance))
+
+
+@trace
+def get_account_assets_from_peer_3():
+
+    global net_3
+    query = iroha_nakamoto.query('GetAccountAssets', account_id='nakamoto@test')
+    IrohaCrypto.sign_query(query, nakamoto_private_key)
+
+    response = net_3.send_query(query)
+    data = response.account_assets_response.account_assets
+    for asset in data:
+        print('Asset id = {}, balance = {}'.format(
+            asset.asset_id, asset.balance))
+
+
+@trace
+def get_satoshi_account_assets_from_peer_3():
+
+    global net_3
+    query = iroha_satoshi.query('GetAccountAssets', account_id='satoshi@test')
+    IrohaCrypto.sign_query(query, satoshi_private_key)
+
+    response = net_3.send_query(query)
+    data = response.account_assets_response.account_assets
+    for asset in data:
+        print('Asset id = {}, balance = {}'.format(
+            asset.asset_id, asset.balance))
 
 
 init_operation()
 satoshi_creates_exchange_batch()
 nakamoto_accepts_exchange_request()
-
-
+check_no_pending_txs()
+get_account_assets_from_peer_1()
+get_account_assets_from_peer_2()
+get_account_assets_from_peer_3()
+get_satoshi_account_assets_from_peer_3()
 
 
 
