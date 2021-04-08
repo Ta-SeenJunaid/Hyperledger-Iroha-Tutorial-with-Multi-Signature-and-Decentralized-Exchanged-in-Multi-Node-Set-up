@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import time
+import binascii
 from iroha import  Iroha, IrohaGrpc, IrohaCrypto
 import os
 import sys
@@ -35,21 +37,128 @@ iroha_satoshi = Iroha(SATOSHI_ACCOUNT_ID)
 nakamoto_private_key = IrohaCrypto.private_key()
 nakamoto_public_key = IrohaCrypto.derive_public_key(nakamoto_private_key)
 NAKAMOTO_ACCOUNT_ID = os.getenv('NAKAMOTO_ACCOUNT_ID', 'nakamoto@test')
-iroha_satoshi = Iroha(NAKAMOTO_ACCOUNT_ID)
+iroha_nakamoto = Iroha(NAKAMOTO_ACCOUNT_ID)
 
 
 def trace(func):
     """
-    A decorator function for tracing begin/end execution
+    A decorator for tracing methods' begin/end execution points
     """
+
     def tracer(*args, **kwargs):
         name = func.__name__
-        print(f'\tEntering {name}')
+        print('\tEntering "{}"'.format(name))
         result = func(*args, **kwargs)
-        print(f'\tLeaving {name}')
+        print('\tLeaving "{}"'.format(name))
         return result
 
-    return tracer()
+    return tracer
+
+
+@trace
+def send_transaction_and_print_status(transaction):
+    global net_1
+    hex_hash = binascii.hexlify(IrohaCrypto.hash(transaction))
+    print('Transaction hash = {}, creator = {}'.format(
+        hex_hash, transaction.payload.reduced_payload.creator_account_id))
+    net_1.send_tx(transaction)
+    for status in net_1.tx_status_stream(transaction):
+        print(status)
+
+
+@trace
+def send_batch_and_print_status(transactions):
+    global net_1
+    net_1.send_txs(transactions)
+    for tx in transactions:
+        hex_hash = binascii.hexlify(IrohaCrypto.hash(tx))
+        print('\t' + '-' * 20)
+        print('Transaction hash = {}, creator = {}'.format(
+            hex_hash, tx.payload.reduced_payload.creator_account_id))
+        # for status in net_1.tx_status_stream(tx):
+        #     print(status)
+
+
+@trace
+def init_operation():
+    global iroha_admin
+    init_cmds = [
+        iroha_admin.command('CreateAsset', asset_name='scoin',
+                      domain_id='test', precision=2),
+        iroha_admin.command('CreateAsset', asset_name='ncoin',
+                      domain_id='test', precision=2),
+        iroha_admin.command('AddAssetQuantity',
+                      asset_id='scoin#test', amount='10000'),
+        iroha_admin.command('AddAssetQuantity',
+                      asset_id='ncoin#test', amount='20000'),
+        iroha_admin.command('CreateAccount', account_name='satoshi', domain_id='test',
+                      public_key=satoshi_public_key),
+        iroha_admin.command('CreateAccount', account_name='nakamoto', domain_id='test',
+                      public_key=nakamoto_public_key),
+        iroha_admin.command('TransferAsset', src_account_id='admin@test', dest_account_id='satoshi@test',
+                      asset_id='scoin#test', description='init top up', amount='10000'),
+        iroha_admin.command('TransferAsset', src_account_id='admin@test', dest_account_id='nakamoto@test',
+                      asset_id='ncoin#test', description='init top up', amount='20000')
+    ]
+    init_tx = iroha_admin.transaction(init_cmds)
+    IrohaCrypto.sign_transaction(init_tx, ADMIN_PRIVATE_KEY)
+    send_transaction_and_print_status(init_tx)
+
+@trace
+def satoshi_creates_exchange_batch():
+    satoshi_tx = iroha_satoshi.transaction(
+        [iroha_satoshi.command(
+            'TransferAsset', src_account_id='satoshi@test', dest_account_id='nakamoto@test', asset_id='scoin#test',
+            amount='1'
+        )],
+        creator_account='satoshi@test'
+    )
+    nakamoto_tx = iroha_nakamoto.transaction(
+        [iroha_nakamoto.command(
+            'TransferAsset', src_account_id='nakamoto@test', dest_account_id='satoshi@test', asset_id='ncoin#test',
+            amount='2'
+        )],
+        creator_account='nakamoto@test'
+    )
+    iroha_satoshi.batch([satoshi_tx, nakamoto_tx], atomic=True)
+    IrohaCrypto.sign_transaction(satoshi_tx, satoshi_private_key)
+    send_batch_and_print_status([satoshi_tx, nakamoto_tx])
+    time.sleep(5)
+
+
+@trace
+def nakamoto_accepts_exchange_request():
+    #Nakamoto can find pending transactions from peer or Satoshi may pass that via a messaging channel
+    global net_1
+    q = IrohaCrypto.sign_query(
+        iroha_nakamoto.query('GetPendingTransactions'),
+        nakamoto_private_key
+    )
+    pending_transactions = net_1.send_query(q)
+    for tx in pending_transactions.transactions_response.transactions:
+        if tx.payload.reduced_payload.creator_account_id == 'satoshi@test':
+            del tx.signatures[:]
+        else:
+            IrohaCrypto.sign_transaction(tx, nakamoto_private_key)
+    send_batch_and_print_status(
+        pending_transactions.transactions_response.transactions)
+    time.sleep(5)
+
+
+
+
+init_operation()
+satoshi_creates_exchange_batch()
+nakamoto_accepts_exchange_request()
+
+
+
+
+
+
+
+
+
 
 
 
