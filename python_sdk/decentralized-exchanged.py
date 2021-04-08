@@ -104,6 +104,7 @@ def init_operation():
     IrohaCrypto.sign_transaction(init_tx, ADMIN_PRIVATE_KEY)
     send_transaction_and_print_status(init_tx)
 
+
 @trace
 def satoshi_creates_exchange_batch():
     satoshi_tx = iroha_satoshi.transaction(
@@ -150,6 +151,7 @@ def nakamoto_accepts_exchange_request():
 init_operation()
 satoshi_creates_exchange_batch()
 nakamoto_accepts_exchange_request()
+
 
 
 
