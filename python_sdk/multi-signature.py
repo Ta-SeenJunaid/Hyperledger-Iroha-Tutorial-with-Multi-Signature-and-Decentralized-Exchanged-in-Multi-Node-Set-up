@@ -140,9 +140,66 @@ def multi_signature_transaction():
     send_transaction_and_print_status(multi_sign_tx)
 
 
+@trace
+def get_satoshi_account_assets_from_peer_1():
 
+    global net_1
+    query = iroha_satoshi_1.query('GetAccountAssets', account_id='satoshi@test')
+    IrohaCrypto.sign_query(query, satoshi_private_key_1)
+
+    response = net_1.send_query(query)
+    data = response.account_assets_response.account_assets
+    for asset in data:
+        print('Asset id = {}, balance = {}'.format(
+            asset.asset_id, asset.balance))
+
+
+@trace
+def get_satoshi_account_assets_from_peer_2():
+
+    global net_2
+    query = iroha_satoshi_1.query('GetAccountAssets', account_id='satoshi@test')
+    IrohaCrypto.sign_query(query, satoshi_private_key_1)
+
+    response = net_2.send_query(query)
+    data = response.account_assets_response.account_assets
+    for asset in data:
+        print('Asset id = {}, balance = {}'.format(
+            asset.asset_id, asset.balance))
+
+
+@trace
+def get_satoshi_account_assets_from_peer_3():
+
+    global net_3
+    query = iroha_satoshi_1.query('GetAccountAssets', account_id='satoshi@test')
+    IrohaCrypto.sign_query(query, satoshi_private_key_1)
+
+    response = net_3.send_query(query)
+    data = response.account_assets_response.account_assets
+    for asset in data:
+        print('Asset id = {}, balance = {}'.format(
+            asset.asset_id, asset.balance))
+
+
+@trace
+def get_nakamoto_account_assets_from_peer_3():
+
+    global net_3
+    query = iroha_nakamoto.query('GetAccountAssets', account_id='nakamoto@test')
+    IrohaCrypto.sign_query(query, nakamoto_private_key)
+
+    response = net_3.send_query(query)
+    data = response.account_assets_response.account_assets
+    for asset in data:
+        print('Asset id = {}, balance = {}'.format(
+            asset.asset_id, asset.balance))
 
 
 init_operation()
 add_keys_and_set_quorum()
 multi_signature_transaction()
+get_satoshi_account_assets_from_peer_1()
+get_satoshi_account_assets_from_peer_2()
+get_satoshi_account_assets_from_peer_3()
+get_nakamoto_account_assets_from_peer_3()
