@@ -19,7 +19,7 @@ From projects root directory, run the following command to setup the network:
 bash network.sh up
 ```
 
-## Pyhthon Code Run
+## Python Code Run
 
 ### Transaction Example
 From projects root directory, run the following command to clear previous setup:
