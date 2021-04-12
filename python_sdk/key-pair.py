@@ -18,8 +18,12 @@ if __name__ == '__main__':
     args = read_args()
 
     if args.private_key:
-        private_key = str.encode(args.private_key)
-        public_key = IrohaCrypto.derive_public_key(private_key)
+        try:
+            private_key = str.encode(args.private_key)
+            public_key = IrohaCrypto.derive_public_key(private_key)
+        except Exception as e:
+            raise Exception(f'Failed to generate key-pair from given private key. {e}')
+
     else:
         private_key = IrohaCrypto.private_key()
         public_key = IrohaCrypto.derive_public_key(private_key)
