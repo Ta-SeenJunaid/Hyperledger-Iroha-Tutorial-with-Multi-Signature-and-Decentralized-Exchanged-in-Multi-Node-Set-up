@@ -1,9 +1,9 @@
 # Hyperledger-Iroha-Tutorial-with-Multi-Signature-and-Decentralized-Exchanged-in-Multi-Node-Set-up
 
 ## Prerequisites
-We run this demo with Docker on Ubuntu machine.
+We run this demo with Docker and  Docker Compose on an Ubuntu machine.
 
-To run the python code, you also need python3, pip3 and iroha python lirary.
+To run the python code, you also need python3, pip3 and iroha python library.
 Install the iroha python library with following command:
 ```
 pip3 install iroha==0.0.5.5
