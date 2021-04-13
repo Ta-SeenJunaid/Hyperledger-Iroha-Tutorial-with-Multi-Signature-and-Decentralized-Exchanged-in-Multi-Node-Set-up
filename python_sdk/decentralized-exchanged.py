@@ -203,6 +203,7 @@ def nakamoto_accepts_exchange_request():
     '''
     Nakamoto can find pending transactions from peer 
     or Satoshi may pass that via a messaging channel
+    (Like the example of multi signature)
     Nakamoto is querying pending transactions from peer
     with his valid credentials
     '''
